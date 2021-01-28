@@ -1,8 +1,16 @@
-
 local TweenService, RunService, UserInputService,gui,dragging,dragInput,dragStart,startPos,cpt,cpf,cppicking,cppickingVal,cppickingAlpha,cphue,cpsat,cpval,focused,highest,focusedBox = game:GetService("TweenService"),game:GetService("RunService"), game:GetService("UserInputService")
 local cpalpha = 0
 
 --custom functions used for all the options
+
+--//Jans UI Library\\--
+
+--[[
+    This was a REMASTER of MurderHax 3.4: https://v3rmillion.net/showthread.php?tid=804072
+    Murder-Ware: https://v3rmillion.net/showthread.php?tid=895245
+    Discord: https://discord.gg/MyjGtee
+]]
+
 
 --drag function
 local function updateDrag(input)
@@ -466,19 +474,19 @@ function library:CreateWindow(ctitle, csize, cpos)
 			end
 		end)
 		
-		function tab:AddSection(title)
-			local section = {order = 0}
+		function tab:AddLocalTab(title)
+			local LocalTab = {order = 0}
 			local bounds = game:GetService('TextService'):GetTextSize(title, library.settings.textsize, library.settings.font, Vector2.new(math.huge, math.huge))
 			checkRow()
 			
-			section.main = library:create("Frame", {
+			LocalTab.main = library:create("Frame", {
 				Size = UDim2.new(1,0,0,0),
 				BackgroundColor3 = library.colors.tabselected,
 				BorderColor3 = library.colors.outline,
 				Parent = self.row
 			})
 			
-			section.title = library:create("TextLabel", {
+			LocalTab.title = library:create("TextLabel", {
 				AnchorPoint = Vector2.new(0,0.5),
 				Position = UDim2.new(0,12,0,0),
 				Size = UDim2.new(0,bounds.X + 8,0,2),
@@ -489,34 +497,34 @@ function library:CreateWindow(ctitle, csize, cpos)
 				TextStrokeTransparency = library.settings.textstroke and 0 or 1,
 				Font = library.settings.font,
 				TextSize = library.settings.textsize,
-				Parent = section.main
+				Parent = LocalTab.main
 			})
 			
-			section.content = library:create("Frame", {
+			LocalTab.content = library:create("Frame", {
 				
 				Size = UDim2.new(1,0,1,0),
 				BackgroundTransparency = 1,
-				Parent = section.main
+				Parent = LocalTab.main
 			})
 			
-			section.layout = library:create("UIListLayout", {
+			LocalTab.layout = library:create("UIListLayout", {
 				Padding = UDim.new(0,4),
 				SortOrder = Enum.SortOrder.LayoutOrder,
-				Parent = section.content
+				Parent = LocalTab.content
 			})
 			
-			section.padding = library:create("UIPadding", {
+			LocalTab.padding = library:create("UIPadding", {
 				PaddingLeft = UDim.new(0,6),
 				PaddingRight = UDim.new(0,6),
 				PaddingTop = UDim.new(0,12),
-				Parent = section.content
+				Parent = LocalTab.content
 			})
 			
-			function section:AddLabel(text)
+			function LocalTab:AddLabel(text)
 				local label = {}
 				label.text = text
 				checkRow()
-				section.main.Parent = tab.row
+				LocalTab.main.Parent = tab.row
 				
 				label.label = library:create("TextLabel", {
 					LayoutOrder = self.order,
@@ -529,21 +537,21 @@ function library:CreateWindow(ctitle, csize, cpos)
 					TextStrokeTransparency = library.settings.textstroke and 0 or 1,
 					TextWrapped = true,
 					TextXAlignment = Enum.TextXAlignment.Left,
-					Parent = section.content
+					Parent = LocalTab.content
 				})
 				
-				section.main.Size = UDim2.new(1,0,0,self.layout.AbsoluteContentSize.Y+16)
+				LocalTab.main.Size = UDim2.new(1,0,0,self.layout.AbsoluteContentSize.Y+16)
 				
 				self.order = self.order + 1
 				
 				return label
 			end
 			
-			function section:AddButton(text, _function)
+			function LocalTab:AddButton(text, _function)
 				local button = {}
 				_function = _function or function() end
 				checkRow()
-				section.main.Parent = tab.row
+				LocalTab.main.Parent = tab.row
 				
 				button.button = library:create("TextButton", {
 					LayoutOrder = self.order,
@@ -566,16 +574,16 @@ function library:CreateWindow(ctitle, csize, cpos)
 					end
 				end)
 				
-				section.main.Size = UDim2.new(1,0,0,self.layout.AbsoluteContentSize.Y+16)
+				LocalTab.main.Size = UDim2.new(1,0,0,self.layout.AbsoluteContentSize.Y+16)
 				
 				return button
 			end
 			
-			function section:AddToggle(text, _function)
+			function LocalTab:AddToggle(text, _function)
 				local toggle = {state = false}
 				_function = _function or function() end
 				checkRow()
-				section.main.Parent = tab.row
+				LocalTab.main.Parent = tab.row
 				
 				toggle.button = library:create("TextButton", {
 					LayoutOrder = self.order,
@@ -628,12 +636,12 @@ function library:CreateWindow(ctitle, csize, cpos)
 					end
 				end)
 				
-				section.main.Size = UDim2.new(1,0,0,self.layout.AbsoluteContentSize.Y+16)
+				LocalTab.main.Size = UDim2.new(1,0,0,self.layout.AbsoluteContentSize.Y+16)
 				
 				return toggle
 			end
 			
-			function section:AddBox(text, txtval, _function, keep)
+			function LocalTab:AddBox(text, txtval, _function, keep)
 				local box = {value = ""}
 				if txtval then
 					if typeof(txtval) == "function" then
@@ -650,7 +658,7 @@ function library:CreateWindow(ctitle, csize, cpos)
 				end
 				_function = _function or function() end
 				checkRow()
-				section.main.Parent = tab.row
+				LocalTab.main.Parent = tab.row
 				
 				box.button = library:create("TextButton", {
 					LayoutOrder = self.order,
@@ -714,17 +722,17 @@ function library:CreateWindow(ctitle, csize, cpos)
 					return _function(box)
 				end
 				
-				section.main.Size = UDim2.new(1,0,0,self.layout.AbsoluteContentSize.Y+18)
+				LocalTab.main.Size = UDim2.new(1,0,0,self.layout.AbsoluteContentSize.Y+18)
 				
 				return box
 			end
 			
-			function section:AddDropdown(text, options, _function, push)
+			function LocalTab:AddDropdown(text, options, _function, push)
 				_function = _function or function() end
 				local dropdown = {order = 0, closed = true, value = options[1]}
 				dropdown.content = {}
 				checkRow()
-				section.main.Parent = tab.row
+				LocalTab.main.Parent = tab.row
 				
 				dropdown.button = library:create("TextButton", {
 					LayoutOrder = self.order,
@@ -878,12 +886,12 @@ function library:CreateWindow(ctitle, csize, cpos)
 					return _function(dropdown.value)
 				end
 				
-				section.main.Size = UDim2.new(1,0,0,self.layout.AbsoluteContentSize.Y+18)
+				LocalTab.main.Size = UDim2.new(1,0,0,self.layout.AbsoluteContentSize.Y+18)
 				
 				return dropdown
 			end
 			
-			function section:AddSlider(text, maxVal, setVal, _function, float, incrementalMode)
+			function LocalTab:AddSlider(text, maxVal, setVal, _function, float, incrementalMode)
 				if setVal then
 					if typeof(setVal) == "function" then
 						if _function then
@@ -915,7 +923,7 @@ function library:CreateWindow(ctitle, csize, cpos)
 				_function = _function or function() end
 				local slider = {value = setVal}
 				checkRow()
-				section.main.Parent = tab.row
+				LocalTab.main.Parent = tab.row
 				
 				slider.button = library:create("TextButton", {
 					LayoutOrder = self.order,
@@ -1060,12 +1068,12 @@ function library:CreateWindow(ctitle, csize, cpos)
 					updateValue()
 				end
 				
-				section.main.Size = UDim2.new(1,0,0,self.layout.AbsoluteContentSize.Y+18)
+				LocalTab.main.Size = UDim2.new(1,0,0,self.layout.AbsoluteContentSize.Y+18)
 				
 				return slider
 			end
 				
-			function section:AddKeybind(text, key, _function, hold)
+			function LocalTab:AddKeybind(text, key, _function, hold)
 				if key and typeof(key) == "function" then
 					hold = _function
 					_function = key
@@ -1083,7 +1091,7 @@ function library:CreateWindow(ctitle, csize, cpos)
 				local bind = {binding = false, holding = false, key = key, hold = hold}
 				local bounds = game:GetService('TextService'):GetTextSize(bind.key.Name, library.settings.textsize, library.settings.font, Vector2.new(math.huge, math.huge))
 				checkRow()
-				section.main.Parent = tab.row
+				LocalTab.main.Parent = tab.row
 				
 				bind.button = library:create("TextButton", {
 					LayoutOrder = self.order,
@@ -1196,12 +1204,12 @@ function library:CreateWindow(ctitle, csize, cpos)
 					setKey(key)
 				end
 				
-				section.main.Size = UDim2.new(1,0,0,self.layout.AbsoluteContentSize.Y+16)
+				LocalTab.main.Size = UDim2.new(1,0,0,self.layout.AbsoluteContentSize.Y+16)
 				
 				return bind
 			end
 				
-			function section:AddCP(text, color3, _function, alpha)
+			function LocalTab:AddCP(text, color3, _function, alpha)
 				if color3 then
 					if typeof(color3) == "function" then
 						_function = color3
@@ -1214,7 +1222,7 @@ function library:CreateWindow(ctitle, csize, cpos)
 				local color = {color = color3, alpha = alpha}
 				cphue, cpsat, cpval = rgbToHsv(red,green,blue)
 				checkRow()
-				section.main.Parent = tab.row
+				LocalTab.main.Parent = tab.row
 				
 				color.button = library:create("TextButton", {
 					LayoutOrder = self.order,
@@ -1429,12 +1437,12 @@ function library:CreateWindow(ctitle, csize, cpos)
 					_function(color.color, color.alpha)
 				end
 				
-				section.main.Size = UDim2.new(1,0,0,self.layout.AbsoluteContentSize.Y+16)
+				LocalTab.main.Size = UDim2.new(1,0,0,self.layout.AbsoluteContentSize.Y+16)
 				
 				return color
 			end
 				
-			return section
+			return LocalTab
 		end
 		
 		return tab
@@ -1462,8 +1470,8 @@ UserInputService.InputBegan:connect(function(input)
 end)
 
 UserInputService.InputChanged:connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseMovement then
-		library.pointer.Position = UDim2.new(0,UserInputService:GetMouseLocation().X+1,0,UserInputService:GetMouseLocation().Y-35)
+	if input.UserInputType == Enum.UserInputType.MouseMovement and library.pointer then
+		library.pointer.Position = UDim2.new(0,UserInputService:GetMouseLocation().X,0,UserInputService:GetMouseLocation().Y-36)
 	end
 end)
 
