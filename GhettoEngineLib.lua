@@ -1,17 +1,46 @@
-local TweenService, RunService, UserInputService,gui,dragging,dragInput,dragStart,startPos,cpt,cpf,cppicking,cppickingVal,cppickingAlpha,cphue,cpsat,cpval,focused,highest,focusedBox = game:GetService("TweenService"),game:GetService("RunService"), game:GetService("UserInputService")
-local cpalpha = 0
-
---custom functions used for all the options
-
 --//Jans UI Library\\--
 
 --[[
-    This was a REMASTER of MurderHax 3.4: https://v3rmillion.net/showthread.php?tid=804072
-    Murder-Ware: https://v3rmillion.net/showthread.php?tid=895245
+    This was a REMASTER of PFX: https://v3rmillion.net/showthread.php?tid=876733&pid=6179455#pid6179455
+    Phantom-Ware: https://v3rmillion.net/showthread.php?tid=895416
     Discord: https://discord.gg/MyjGtee
 ]]
 
+local HttpService, TweenService, RunService, UserInputService,gui,dragging,dragInput,dragStart,startPos,cpt,cpf,cppicking,cppickingVal,cppickingAlpha,cphue,cpsat,cpval,focused,highest,focusedBox = game:GetService("HttpService"),game:GetService("TweenService"),game:GetService("RunService"), game:GetService("UserInputService")
+local cpalpha = 0
 
+--custom functions used for all the options
+local save = {}
+
+--save function
+local function S()
+	local JSONData = HttpService:JSONEncode(save)
+	--writefile("Qualv3.json", JSONData)
+end
+
+local queue = {}
+
+spawn(function()
+	while wait(5) do
+		for k,v in pairs(queue) do
+			save[k] = v
+		end
+		S()
+		queue = {}
+	end
+end)
+
+--save color3
+local function packColor3(c3)
+	return {"color3", c3.r, c3.g, c3.b}
+end
+
+--load color3
+local function unpackColor3(c3)
+	if c3 ~= nil then
+		return Color3.new(c3[2], c3[3], c3[4])
+	end
+end
 --drag function
 local function updateDrag(input)
     local delta = input.Position - dragStart
@@ -232,29 +261,38 @@ local function closeWindow(obj)
 	end
 end
 
+local function invert(c3)
+	return Color3.new(1-c3.r, 1-c3.g, 1-c3.b)
+end
+
 --start of library
 local library = {windows = {}}
 
-library.settings = {
-	title = "Title text",
-	footer = "Footer text",
-	modal = true,
-	toggle = Enum.KeyCode.F8,
-	font = Enum.Font.Code,
-	textsize = 14,
-	textstroke = true
-}
+if not library.settings then
+	library.settings = {
+		title = "Title text",
+		footer = "Footer text",
+		modal = true,
+		toggle = Enum.KeyCode.LeftAlt,
+		font = Enum.Font.Code,
+		textsize = 14,
+		textstroke = true
+	}
+end
 
-library.colors = {
-	theme = Color3.fromRGB(218,137,6),
-	text = Color3.fromRGB(255,255,255),
-	main = Color3.fromRGB(30,30,30),
-	fade = Color3.fromRGB(50,50,50),
-	outline = Color3.fromRGB(10,10,10),
-	tabholder = Color3.fromRGB(60,60,60),
-	tabbutton = Color3.fromRGB(40,40,40),
-	tabselected = Color3.fromRGB(50,50,50)
-}
+if not library.colors then
+	library.colors = {
+		theme = Color3.fromRGB(218,137,6),
+		text = Color3.fromRGB(255,255,255),
+		main = Color3.fromRGB(30,30,30),
+		fade = Color3.fromRGB(50,50,50),
+		outline = Color3.fromRGB(10,10,10),
+		tabholder = Color3.fromRGB(60,60,60),
+		tabbutton = Color3.fromRGB(40,40,40),
+		tabselected = Color3.fromRGB(50,50,50),
+		scrollbar = Color3.fromRGB(90,90,90),
+	}
+end
 
 function library:create(class, properties)
 	local inst = Instance.new(class)
@@ -275,11 +313,14 @@ function library:CreateWindow(ctitle, csize, cpos)
 	cpos = cpos or Vector2.new(40,40)
 	csize = csize or Vector2.new(460,500)
 	local window = {xpos = 0, close = true, draggable = true}
+	
+	
 	table.insert(self.windows, window)
 	
 	self.base = self.base or self:create("ScreenGui", {
-		Parent = game.CoreGui
+		Parent = game:WaitForChild("CoreGui")
 	})
+	
 	
 	self.pointer = self.pointer or self:create("Frame", {
 		ZIndex = 100,
@@ -305,6 +346,90 @@ function library:CreateWindow(ctitle, csize, cpos)
 		AutoButtonColor = false,
 		Parent = self.base
 	})
+	
+	
+	if #self.windows == 1 then
+		self.footer = library:create("TextLabel", {
+				Position = UDim2.new(0,0,1,0),
+				Size = UDim2.new(1,0,0,-18),
+				BackgroundColor3 = library.colors.tabbutton,
+				BorderColor3 = library.colors.outline,
+				Text = " ",
+				TextColor3 = library.colors.text,
+				TextStrokeTransparency = library.settings.textstroke and 0 or 1,
+				Font = library.settings.font,
+				TextSize = library.settings.textsize,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				Parent = window.main
+		})
+	
+		library:create("UIListLayout", {
+			VerticalAlignment = Enum.VerticalAlignment.Center;
+			FillDirection = Enum.FillDirection.Horizontal;
+			HorizontalAlignment = Enum.HorizontalAlignment.Right;
+			SortOrder = Enum.SortOrder.LayoutOrder;
+			Padding = UDim.new(0, 1);
+			Parent = self.footer
+		})
+			
+		library:create("UIPadding", {
+			PaddingRight = UDim.new(0, 5);
+			Parent = self.footer
+		})
+	else
+		window.main.Size = UDim2.new(0,csize.X,0,csize.Y-18)
+		local toggle = {state = true}
+		toggle.button = library:create("TextButton", {
+			LayoutOrder = self.order,
+			Size = UDim2.new(0,library.settings.textsize + 2,0,library.settings.textsize + 2),
+			BackgroundTransparency = 1,
+			Text = " ",
+			TextColor3 = library.colors.text,
+			Font = library.settings.font,
+			TextSize = library.settings.textsize,
+			TextStrokeTransparency = library.settings.textstroke and 0 or 1,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			Parent = self.footer,
+		})
+		
+		toggle.holder = library:create("Frame", {
+			AnchorPoint = Vector2.new(0,0.5),
+			Position = UDim2.new(1,-1,0.5,0),
+			Size = UDim2.new(0,-library.settings.textsize+4,0,library.settings.textsize-4),
+			BackgroundColor3 = library.colors.tabholder,
+			BorderSizePixel = 2,
+			BorderColor3 = library.colors.main,
+			Parent = toggle.button,
+		})
+		
+		toggle.visualize = library:create("Frame", {
+			Position = UDim2.new(0,0,0,0),
+			Size = UDim2.new(1,0,1,0),
+			BackgroundTransparency = 0,
+			BackgroundColor3 = library.colors.theme,
+			BorderSizePixel = 0,
+			Parent = toggle.holder,
+		})
+		
+		function toggle:SetToggle(state)
+			toggle.state = state
+			if toggle.state then
+				toggle.visualize.BackgroundTransparency = 0
+			else
+				toggle.visualize.BackgroundTransparency = 1	
+			end
+			window.main.Visible = toggle.state
+		end
+
+		toggle.button.InputBegan:connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 then
+				toggle.state = not toggle.state
+				toggle:SetToggle(toggle.state)
+			end
+		end)
+	end
+	
+	
 	
 	window.shade = self:create("ImageLabel", {
 		Size = UDim2.new(1,0,0,18),
@@ -353,7 +478,7 @@ function library:CreateWindow(ctitle, csize, cpos)
 		end
 	end)
 	
-	function window:CreateTab(name)
+	function window:CreateTab(name, size)
 		local tab = {}
 		local bounds = game:GetService('TextService'):GetTextSize(name, library.settings.textsize, library.settings.font, Vector2.new(math.huge, math.huge))
 		tab.rows = {}
@@ -381,6 +506,7 @@ function library:CreateWindow(ctitle, csize, cpos)
 				self.main.Size = self.main.Size + UDim2.new(0,csize.X/2 - 10,0,0)
 			end
 		end
+		tab.createNewRow = createNewRow
 		local function checkRow()
 			if tab.row then
 				for _,row in pairs(tab.rows) do
@@ -403,28 +529,39 @@ function library:CreateWindow(ctitle, csize, cpos)
 			Parent = self.main
 		})
 		
-		self.footer = self.footer or library:create("TextLabel", {
-			Position = UDim2.new(0,0,1,0),
-			Size = UDim2.new(1,0,0,-18),
-			BackgroundColor3 = library.colors.tabbutton,
-			BorderColor3 = library.colors.outline,
-			Text = " "..library.settings.footer,
-			TextColor3 = library.colors.text,
-			TextStrokeTransparency = library.settings.textstroke and 0 or 1,
-			Font = library.settings.font,
-			TextSize = library.settings.textsize,
-			TextXAlignment = Enum.TextXAlignment.Left,
-			Parent = self.main
-		})
-	
-		tab.main = library:create("Frame", {
-			Position = UDim2.new(0,0,0,20),
-			Size = UDim2.new(1,0,1,-20),
-			BackgroundColor3 = library.colors.tabselected,
-			BorderColor3 = library.colors.outline,
-			Visible = false,
-			Parent = self.tabholder
-		})
+		if #library.windows == 1 then
+			tab.main = library:create("ScrollingFrame", {
+				Position = UDim2.new(0,0,0,20),
+				Size = UDim2.new(1,0,1,-20),
+				CanvasSize = size or UDim2.new(0,0,0,0),
+				BottomImage = "rbxassetid://6347925",
+				MidImage = "rbxassetid://6347925",
+				TopImage = "rbxassetid://6347925",
+				ScrollBarImageColor3 = library.colors.scrollbar,
+				ScrollingDirection = Enum.ScrollingDirection.Y,
+				VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar,
+				BackgroundColor3 = library.colors.tabselected,
+				BorderColor3 = library.colors.outline,
+				Visible = false,
+				Parent = self.tabholder
+			})
+		else
+			tab.main = library:create("ScrollingFrame", {
+				Position = UDim2.new(0,0,0,20),
+				Size = UDim2.new(1,0,1,-5),
+				CanvasSize = size or UDim2.new(0,0,0,0),
+				BottomImage = "rbxassetid://6347925",
+				MidImage = "rbxassetid://6347925",
+				TopImage = "rbxassetid://6347925",
+				ScrollBarImageColor3 = library.colors.scrollbar,
+				ScrollingDirection = Enum.ScrollingDirection.Y,
+				VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar,
+				BackgroundColor3 = library.colors.tabselected,
+				BorderColor3 = library.colors.outline,
+				Visible = false,
+				Parent = self.tabholder
+			})
+		end
 		
 		tab.button = library:create("Frame", {
 			
@@ -462,15 +599,19 @@ function library:CreateWindow(ctitle, csize, cpos)
 		end
 		self.xpos = self.xpos + bounds.X + 8
 		
+		function tab:clicked()
+			window.focused.main.Visible = false
+			window.focused.buttontop.Size = window.focused.buttontop.Size - UDim2.new(0,0,0,1)
+			window.focused.buttontop.BackgroundColor3 = library.colors.tabbutton
+			window.focused = tab
+			window.focused.main.Visible = true
+			window.focused.buttontop.Size = window.focused.buttontop.Size + UDim2.new(0,0,0,1)
+			window.focused.buttontop.BackgroundColor3 = library.colors.tabselected
+		end
+		
 		tab.label.InputBegan:connect(function(input)
 			if input.UserInputType == Enum.UserInputType.MouseButton1 then
-				self.focused.main.Visible = false
-				self.focused.buttontop.Size = self.focused.buttontop.Size - UDim2.new(0,0,0,1)
-				self.focused.buttontop.BackgroundColor3 = library.colors.tabbutton
-				self.focused = tab
-				self.focused.main.Visible = true
-				self.focused.buttontop.Size = self.focused.buttontop.Size + UDim2.new(0,0,0,1)
-				self.focused.buttontop.BackgroundColor3 = library.colors.tabselected
+				tab:clicked()
 			end
 		end)
 		
@@ -556,14 +697,31 @@ function library:CreateWindow(ctitle, csize, cpos)
 				button.button = library:create("TextButton", {
 					LayoutOrder = self.order,
 					Size = UDim2.new(1,0,0,library.settings.textsize + 2),
+					Text = "",
+					BackgroundColor3 = Color3.new(),
+					AutoButtonColor = false,
+					BorderColor3 = Color3.new(),
+					Parent = self.content,
+				})
+				
+				button.shade = library:create("ImageLabel", {
+					Size = UDim2.new(1,0,0,30),
 					BackgroundTransparency = 1,
+					Image = "rbxassetid://2916745254",
+					ImageColor3 = library.colors.fade,
+					Parent = button.button
+				})
+				
+				button.label = library:create("TextLabel", {
+					BackgroundTransparency = 1,
+					Size = UDim2.new(1,0,0,library.settings.textsize + 2),
 					Text = tostring(text),
 					TextColor3 = library.colors.text,
 					Font = library.settings.font,
+					ZIndex = 4,
 					TextSize = library.settings.textsize,
 					TextStrokeTransparency = library.settings.textstroke and 0 or 1,
-					TextXAlignment = Enum.TextXAlignment.Left,
-					Parent = self.content,
+					Parent = button.button
 				})
 				
 				self.order = self.order + 1
@@ -574,12 +732,20 @@ function library:CreateWindow(ctitle, csize, cpos)
 					end
 				end)
 				
+				button.button.MouseButton1Down:connect(function()
+					button.shade.ImageTransparency = 0.2
+				end)
+				
+				button.button.MouseButton1Up:connect(function()
+					button.shade.ImageTransparency = 0
+				end)
+				
 				LocalTab.main.Size = UDim2.new(1,0,0,self.layout.AbsoluteContentSize.Y+16)
 				
 				return button
 			end
 			
-			function LocalTab:AddToggle(text, _function)
+			function LocalTab:AddToggle(text, default, _function)
 				local toggle = {state = false}
 				_function = _function or function() end
 				checkRow()
@@ -607,7 +773,7 @@ function library:CreateWindow(ctitle, csize, cpos)
 					BorderColor3 = library.colors.main,
 					Parent = toggle.button,
 				})
-				
+			
 				toggle.visualize = library:create("Frame", {
 					Position = UDim2.new(0,0,0,0),
 					Size = UDim2.new(1,0,1,0),
@@ -621,6 +787,8 @@ function library:CreateWindow(ctitle, csize, cpos)
 				
 				function toggle:SetToggle(state)
 					toggle.state = state
+					save[LocalTab.title.Text..text] = state
+					S()
 					if toggle.state then
 						toggle.visualize.BackgroundTransparency = 0
 					else
@@ -628,6 +796,8 @@ function library:CreateWindow(ctitle, csize, cpos)
 					end
 					return _function(toggle.state)
 				end
+				
+				toggle:SetToggle(save[LocalTab.title.Text..text] or default)
 				
 				toggle.button.InputBegan:connect(function(input)
 					if input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -704,6 +874,8 @@ function library:CreateWindow(ctitle, csize, cpos)
 							box.box.Text = box.value
 							return
 						else
+							save[LocalTab.title.Text..text] = box.box.Text
+							S()
 							box.value = box.box.Text
 						end
 					end
@@ -719,17 +891,21 @@ function library:CreateWindow(ctitle, csize, cpos)
 				function box:SetValue(value)
 					box.value = value
 					box.box.Text = box.value
+					save[LocalTab.title.Text..text] = box.value
+					S()
 					return _function(box)
 				end
+				
+				box:SetValue(save[LocalTab.title.Text..text] or txtval)
 				
 				LocalTab.main.Size = UDim2.new(1,0,0,self.layout.AbsoluteContentSize.Y+18)
 				
 				return box
 			end
 			
-			function LocalTab:AddDropdown(text, options, _function, push)
+			function LocalTab:AddDropdown(text, default, options, _function, push)
 				_function = _function or function() end
-				local dropdown = {order = 0, closed = true, value = options[1]}
+				local dropdown = {order = 0, closed = true, value = options[default]}
 				dropdown.content = {}
 				checkRow()
 				LocalTab.main.Parent = tab.row
@@ -852,6 +1028,8 @@ function library:CreateWindow(ctitle, csize, cpos)
 							dropdown.closed = true
 							dropdown.arrow.Text = ">"
 							dropdown.container.Visible = false
+							save[LocalTab.title.Text..text] = dropdown.value
+							S()
 							return _function(dropdown.value)
 						end)
 						
@@ -883,8 +1061,12 @@ function library:CreateWindow(ctitle, csize, cpos)
 				function dropdown:SetValue(value)
 					dropdown.value = value
 					dropdown.label.Text = dropdown.value
+					save[LocalTab.title.Text..text] = dropdown.value
+					S()
 					return _function(dropdown.value)
 				end
+				
+				dropdown:SetValue(save[LocalTab.title.Text..text] or dropdown.value)
 				
 				LocalTab.main.Size = UDim2.new(1,0,0,self.layout.AbsoluteContentSize.Y+18)
 				
@@ -1001,6 +1183,7 @@ function library:CreateWindow(ctitle, csize, cpos)
 						slider.sliderfill:TweenSize(UDim2.new(slider.value/maxVal,0,1,0), "Out", "Quad", 0.1, true)
 					end
 					slider.visualize.Text = slider.value
+					queue[LocalTab.title.Text..text] = slider.value*maxVal
 					_function(slider.value)
 				end
 				
@@ -1065,8 +1248,11 @@ function library:CreateWindow(ctitle, csize, cpos)
 				
 				function slider:SetValue(num)
 					slider.value = num/maxVal
+					queue[LocalTab.title.Text..text] = num
 					updateValue()
 				end
+				
+				slider:SetValue(save[LocalTab.title.Text..text] or setVal)
 				
 				LocalTab.main.Size = UDim2.new(1,0,0,self.layout.AbsoluteContentSize.Y+18)
 				
@@ -1077,7 +1263,6 @@ function library:CreateWindow(ctitle, csize, cpos)
 				if key and typeof(key) == "function" then
 					hold = _function
 					_function = key
-					key = Enum.KeyCode.F
 				end
 				if typeof(key) == "string" then
 					if not keyCheck(Enum.KeyCode[key:upper()], blacklistedKeys) then
@@ -1089,7 +1274,13 @@ function library:CreateWindow(ctitle, csize, cpos)
 				end
 				_function = _function or function() end
 				local bind = {binding = false, holding = false, key = key, hold = hold}
-				local bounds = game:GetService('TextService'):GetTextSize(bind.key.Name, library.settings.textsize, library.settings.font, Vector2.new(math.huge, math.huge))
+				
+				local keyname = "None"
+				if key then
+					keyname = bind.key.Name
+				end
+				
+				local bounds = game:GetService('TextService'):GetTextSize(keyname, library.settings.textsize, library.settings.font, Vector2.new(math.huge, math.huge))
 				checkRow()
 				LocalTab.main.Parent = tab.row
 				
@@ -1112,7 +1303,7 @@ function library:CreateWindow(ctitle, csize, cpos)
 					Size = UDim2.new(0,-bounds.X-8,1,-4),
 					BackgroundColor3 = library.colors.tabholder,
 					BorderColor3 = library.colors.main,
-					Text = bind.key.Name,
+					Text = keyname,
 					TextColor3 = library.colors.text,
 					Font = library.settings.font,
 					TextSize = library.settings.textsize,
@@ -1134,6 +1325,8 @@ function library:CreateWindow(ctitle, csize, cpos)
 					end
 				end)
 				local function setKey(key)
+					save[LocalTab.title.Text..text] = key.Name
+					S()
 					bind.key = key
 					bind.label.Text = bind.key.Name
 					bind.label.Size = UDim2.new(0,-bind.label.TextBounds.X-8,1,-4)
@@ -1151,6 +1344,7 @@ function library:CreateWindow(ctitle, csize, cpos)
 				end
 				
 				UserInputService.InputBegan:connect(function(input)
+					if UserInputService:GetFocusedTextBox() then return end
 					if bind.binding then
 						if input.KeyCode == Enum.KeyCode.Backspace then
 							setKey(bind.key)
@@ -1165,7 +1359,7 @@ function library:CreateWindow(ctitle, csize, cpos)
 								bind.binding = false
 							end
 						end
-					else
+					elseif bind.key then
 						if library.settings.modal and window.main.Visible then
 							return
 						end
@@ -1181,11 +1375,13 @@ function library:CreateWindow(ctitle, csize, cpos)
 				end)
 				
 				UserInputService.InputEnded:connect(function(input)
-					if input.KeyCode.Name == bind.key.Name then
-						bind.holding = false
-					end
-					if input.UserInputType.Name == bind.key.Name then
-						bind.holding = false
+					if bind.key then
+						if input.KeyCode.Name == bind.key.Name then
+							bind.holding = false
+						end
+						if input.UserInputType.Name == bind.key.Name then
+							bind.holding = false
+						end
 					end
 				end)
 				
@@ -1202,6 +1398,12 @@ function library:CreateWindow(ctitle, csize, cpos)
 						RunService:UnbindFromRenderStep(a .. bind.key.Name)
 					end
 					setKey(key)
+				end
+				
+				if key or save[LocalTab.title.Text..text] then
+					bind:SetKeybind(save[LocalTab.title.Text..text] or key)
+				else
+					bind.label.Text = keyname
 				end
 				
 				LocalTab.main.Size = UDim2.new(1,0,0,self.layout.AbsoluteContentSize.Y+16)
@@ -1303,7 +1505,7 @@ function library:CreateWindow(ctitle, csize, cpos)
 					Position = UDim2.new(1,-10,1-cpval,0),
 					Size = UDim2.new(0,16,0,16),
 					BackgroundTransparency = 1,
-					Text = "◄",
+					Text = "<",
 					TextColor3 = Color3.fromRGB(0,0,0),
 					TextStrokeTransparency = 0,
 					TextStrokeColor3 = Color3.fromRGB(130,130,130),
@@ -1337,7 +1539,7 @@ function library:CreateWindow(ctitle, csize, cpos)
 					Position = UDim2.new(color.alpha,0,1,-10),
 					Size = UDim2.new(0,16,0,16),
 					BackgroundTransparency = 1,
-					Text = "▲",
+					Text = "^",
 					TextColor3 = Color3.fromRGB(0,0,0),
 					TextStrokeTransparency = 0,
 					TextStrokeColor3 = Color3.fromRGB(130,130,130),
@@ -1398,6 +1600,7 @@ function library:CreateWindow(ctitle, csize, cpos)
 						color.Alpha.ImageColor3 = color.color
 						cpt = color
 						cpf = _function
+						queue[LocalTab.title.Text..text.."color"] = packColor3(color.color)
 						return _function(color.color)
 					end
 				end)
@@ -1415,11 +1618,13 @@ function library:CreateWindow(ctitle, csize, cpos)
 						color.alpha = 1-cpalpha
 						cpt = color
 						cpf = _function
+						queue[LocalTab.title.Text..text.."alpha"] = color.alpha
 						return _function(color.color, color.alpha)
 					end
 				end)
 				
 				function color:SetColor(newColor)
+					queue[LocalTab.title.Text..text.."color"] = packColor3(newColor)
 					color.color = newColor
 					local red, green, blue = newColor.r*255, newColor.g*255, newColor.b*255
 					local hue, sat, val = rgbToHsv(red,green,blue)
@@ -1427,15 +1632,20 @@ function library:CreateWindow(ctitle, csize, cpos)
 					color.pointer2.Position = UDim2.new(1,-10,1-val,0)
 					color.visualize.BackgroundColor3 = color.color
 					color.Alpha.ImageColor3 = color.color
+					
 					_function(color.color)
 				end
 				
 				function color:SetAlpha(newAlpha)
+					queue[LocalTab.title.Text..text.."alpha"] = newAlpha
 					color.alpha = newAlpha
 					color.pointer3.Position = UDim2.new(color.alpha,0,1,-10)
 					color.visualize.BackgroundTransparency = color.alpha
 					_function(color.color, color.alpha)
 				end
+				
+				color:SetColor(unpackColor3(save[LocalTab.title.Text..text.."color"]) or color3)
+				color:SetAlpha(save[LocalTab.title.Text..text.."alpha"] or alpha)
 				
 				LocalTab.main.Size = UDim2.new(1,0,0,self.layout.AbsoluteContentSize.Y+16)
 				
