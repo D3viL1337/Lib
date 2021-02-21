@@ -1,6 +1,46 @@
+--//Jans UI Library\\--
+
+--[[
+    This was a REMASTER of PFX: https://v3rmillion.net/showthread.php?tid=876733&pid=6179455#pid6179455
+    Phantom-Ware: https://v3rmillion.net/showthread.php?tid=895416
+    Discord: https://discord.gg/MyjGtee
+]]
+
 local HttpService, TweenService, RunService, UserInputService,gui,dragging,dragInput,dragStart,startPos,cpt,cpf,cppicking,cppickingVal,cppickingAlpha,cphue,cpsat,cpval,focused,highest,focusedBox = game:GetService("HttpService"),game:GetService("TweenService"),game:GetService("RunService"), game:GetService("UserInputService")
 local cpalpha = 0
 
+--custom functions used for all the options
+local save = {}
+
+--save function
+local function S()
+	local JSONData = HttpService:JSONEncode(save)
+	--writefile("Qualv3.json", JSONData)
+end
+
+local queue = {}
+
+spawn(function()
+	while wait(5) do
+		for k,v in pairs(queue) do
+			save[k] = v
+		end
+		S()
+		queue = {}
+	end
+end)
+
+--save color3
+local function packColor3(c3)
+	return {"color3", c3.r, c3.g, c3.b}
+end
+
+--load color3
+local function unpackColor3(c3)
+	if c3 ~= nil then
+		return Color3.new(c3[2], c3[3], c3[4])
+	end
+end
 --drag function
 local function updateDrag(input)
     local delta = input.Position - dragStart
